@@ -1,4 +1,4 @@
-package com.n11.bootcamp.ecommerce.user_service.dto.controller;
+package com.n11.bootcamp.ecommerce.user_service.controller;
 
 import com.n11.bootcamp.ecommerce.user_service.dto.request.LoginRequestDto;
 import com.n11.bootcamp.ecommerce.user_service.dto.request.SignUpRequestDto;
