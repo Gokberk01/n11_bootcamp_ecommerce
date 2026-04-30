@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/user")
 public class UserController {
 
-    UserServiceImpl userServiceImpl;
+    private final UserServiceImpl userServiceImpl;
 
     public UserController(UserServiceImpl userServiceImpl) {this.userServiceImpl = userServiceImpl;}
 
