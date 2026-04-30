@@ -129,6 +129,15 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(user);
 
+        ShoppingCart userShoppingCart = new ShoppingCart();
+        userShoppingCart.setShoppingCartName(user.getUsername());
+
+        restTemplate.postForObject(
+                SHOPPING_CART_BASE + "/api/shopping-cart",
+                userShoppingCart.getShoppingCartName(),
+                String.class
+        );
+
         return ResponseEntity.ok(new MessageResponseDto("User registered successfully!"));
     }
 

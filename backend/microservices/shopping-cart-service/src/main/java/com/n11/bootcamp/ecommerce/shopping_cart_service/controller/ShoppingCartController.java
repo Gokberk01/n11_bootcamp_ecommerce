@@ -22,8 +22,13 @@ public class ShoppingCartController {
         this.shoppingCartServiceImpl = shoppingCartServiceImpl;
     }
 
+//    @PostMapping
+//    public ResponseEntity<ShoppingCart> createShoppingCart(@RequestParam("name") String name) {
+//        return shoppingCartServiceImpl.createShoppingCart(name);
+//    }
+
     @PostMapping
-    public ResponseEntity<ShoppingCart> createShoppingCart(@RequestParam("name") String name) {
+    public ResponseEntity<ShoppingCart> createShoppingCart(@RequestBody String name) {
         return shoppingCartServiceImpl.createShoppingCart(name);
     }
 

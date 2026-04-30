@@ -1,8 +1,6 @@
 package com.n11.bootcamp.ecommerce.user_service.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.*;
 
 import java.util.Set;
 
@@ -12,9 +10,6 @@ public class ShoppingCart {
     @Id
     private long id;
     private String shoppingCartName;
-
-    @ManyToMany(mappedBy = "shoppingCarts")
-    private Set<Product> products;
 
 
     // Getters - Setters
