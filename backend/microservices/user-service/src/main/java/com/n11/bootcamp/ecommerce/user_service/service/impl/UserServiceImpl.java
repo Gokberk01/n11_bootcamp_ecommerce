@@ -4,11 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.n11.bootcamp.ecommerce.user_service.dto.request.LoginRequestDto;
 import com.n11.bootcamp.ecommerce.user_service.dto.request.SignUpRequestDto;
+import com.n11.bootcamp.ecommerce.user_service.dto.request.UpdateUserRequestDto;
 import com.n11.bootcamp.ecommerce.user_service.dto.response.JwtResponseDto;
 import com.n11.bootcamp.ecommerce.user_service.dto.response.MessageResponseDto;
+import com.n11.bootcamp.ecommerce.user_service.entity.ShoppingCart;
 import com.n11.bootcamp.ecommerce.user_service.entity.User;
 import com.n11.bootcamp.ecommerce.user_service.repository.UserRepository;
 import com.n11.bootcamp.ecommerce.user_service.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -39,6 +42,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     private final RestTemplate restTemplate;
+
+    private static final  String SHOPPING_CART_BASE = "http://SHOPPING-CART-SERVICE";
 
 
     public UserServiceImpl(UserRepository userRepository, RestTemplate restTemplate) {
@@ -125,5 +130,63 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         return ResponseEntity.ok(new MessageResponseDto("User registered successfully!"));
+    }
+
+    public ResponseEntity<?> deleteUser(Long userId) {
+        try {
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found!"));
+
+            try {
+
+                ShoppingCart shoppingCart = restTemplate.getForObject(
+                        SHOPPING_CART_BASE + "/api/shopping-cart/by-name/" + user.getUsername(),
+                        ShoppingCart.class);
+
+                restTemplate.delete(SHOPPING_CART_BASE + "/api/shopping-cart/" + shoppingCart.getId());
+            } catch (Exception e) {
+                // Continue deleting user
+            }
+
+
+            userRepository.delete(user);
+
+            return ResponseEntity.ok(new MessageResponseDto("User account deleted successfully!"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.badRequest().body(new MessageResponseDto(e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new MessageResponseDto("Internal Server Error"));
+        }
+    }
+
+    public ResponseEntity<?> updateUser(Long userId, UpdateUserRequestDto updateUserRequestDto) {
+        try {
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found!"));
+
+            if (updateUserRequestDto.getPassword() != null && !updateUserRequestDto.getPassword().isEmpty()) {
+                PasswordEncoder encoder = new BCryptPasswordEncoder();
+                user.setPassword(encoder.encode(updateUserRequestDto.getPassword()));
+            }
+
+            if (updateUserRequestDto.getEmail() != null && !updateUserRequestDto.getEmail().isEmpty()) {
+                if (userRepository.existsByEmail(updateUserRequestDto.getEmail())) {
+                    return ResponseEntity.badRequest().body(new MessageResponseDto("Email is already in use!"));
+                }
+                user.setEmail(updateUserRequestDto.getEmail());
+            }
+
+            userRepository.save(user);
+
+            return ResponseEntity.ok(new MessageResponseDto("User account updated successfully!"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.badRequest().body(new MessageResponseDto(e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new MessageResponseDto("Internal Server Error"));
+        }
     }
 }

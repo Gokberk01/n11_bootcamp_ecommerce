@@ -13,8 +13,8 @@ public class ShoppingCart {
     private long id;
     private String shoppingCartName;
 
-    @ManyToMany(mappedBy = "products")
-    private Set<ShoppingCart> shoppingCarts;
+    @ManyToMany(mappedBy = "shoppingCarts")
+    private Set<Product> products;
 
 
     // Getters - Setters
