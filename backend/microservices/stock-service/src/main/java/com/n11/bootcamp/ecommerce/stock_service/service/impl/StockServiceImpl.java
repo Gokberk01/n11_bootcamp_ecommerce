@@ -19,38 +19,82 @@ public class StockServiceImpl {
     }
 
 
-    public StockUpdateResponseDto decreaseStock(StockUpdateRequestDto stockUpdateRequestDto) {
-        try {
 
-            for (StockItemDto stockItem : stockUpdateRequestDto.getItems()) {
-                Stock stock = stockRepository.findById(stockItem.getProductId())
-                        .orElseThrow(() -> new IllegalArgumentException("Product not found: " + stockItem.getProductId()));
-                if (stock.getProductQuantity() < stockItem.getQuantity()) {
-                    throw new IllegalStateException("Insufficient stock for productId=" + stockItem.getProductId());
+    @Transactional
+    public StockUpdateResponseDto reserve(StockUpdateRequestDto req) {
+        try {
+            // önce tüm ürünleri doğrula
+            for (StockItemDto it : req.getItems()) {
+                Stock ps = stockRepository.findById(it.getProductId())
+                        .orElseThrow(() -> new IllegalArgumentException("Product not found: " + it.getProductId()));
+
+                if (ps.getAvailableQuantity() < it.getQuantity()) {
+                    throw new IllegalStateException("Insufficient stock for productId=" + it.getProductId());
                 }
             }
 
-            for (StockItemDto stockItem : stockUpdateRequestDto.getItems()) {
-                Stock stock = stockRepository.findById(stockItem.getProductId()).orElseThrow();
-                stock.decreaseProductQuantity(stockItem.getQuantity());
-                stockRepository.save(stock);
+            // sonra rezerve et
+            for (StockItemDto it : req.getItems()) {
+                Stock ps = stockRepository.findById(it.getProductId()).orElseThrow();
+                ps.reserve(it.getQuantity());
+                stockRepository.save(ps);
             }
-            return StockUpdateResponseDto.ok("Stock decreased");
+
+            return StockUpdateResponseDto.ok("Stock reserved");
         } catch (Exception e) {
             return StockUpdateResponseDto.fail(e.getMessage());
         }
     }
 
 
-    public StockUpdateResponseDto increaseStock(StockUpdateRequestDto stockUpdateRequestDto) {
+    @Transactional
+    public StockUpdateResponseDto release(StockUpdateRequestDto req) {
         try {
-            for (StockItemDto stockItem : stockUpdateRequestDto.getItems()) {
-                Stock stock = stockRepository.findById(stockItem.getProductId())
-                        .orElseThrow(() -> new IllegalArgumentException("Product not found: " + stockItem.getProductId()));
-                stock.increaseProductQuantity(stockItem.getQuantity());
-                stockRepository.save(stock);
+            // önce tüm ürünleri doğrula
+            for (StockItemDto it : req.getItems()) {
+                Stock ps = stockRepository.findById(it.getProductId())
+                        .orElseThrow(() -> new IllegalArgumentException("Product not found: " + it.getProductId()));
+
+                if (ps.getReservedQuantity() < it.getQuantity()) {
+                    throw new IllegalStateException("Insufficient reserved stock for productId=" + it.getProductId());
+                }
             }
-            return StockUpdateResponseDto.ok("Stock increased");
+
+            // sonra rezervasyonu geri bırak
+            for (StockItemDto it : req.getItems()) {
+                Stock ps = stockRepository.findById(it.getProductId()).orElseThrow();
+                ps.release(it.getQuantity());
+                stockRepository.save(ps);
+            }
+
+            return StockUpdateResponseDto.ok("Stock released");
+        } catch (Exception e) {
+            return StockUpdateResponseDto.fail(e.getMessage());
+        }
+    }
+
+
+    @Transactional
+    public StockUpdateResponseDto commit(StockUpdateRequestDto req) {
+        try {
+            // önce tüm ürünleri doğrula
+            for (StockItemDto it : req.getItems()) {
+                Stock ps = stockRepository.findById(it.getProductId())
+                        .orElseThrow(() -> new IllegalArgumentException("Product not found: " + it.getProductId()));
+
+                if (ps.getReservedQuantity() < it.getQuantity()) {
+                    throw new IllegalStateException("Insufficient reserved stock for productId=" + it.getProductId());
+                }
+            }
+
+            // sonra commit et
+            for (StockItemDto it : req.getItems()) {
+                Stock ps = stockRepository.findById(it.getProductId()).orElseThrow();
+                ps.commit(it.getQuantity());
+                stockRepository.save(ps);
+            }
+
+            return StockUpdateResponseDto.ok("Stock committed");
         } catch (Exception e) {
             return StockUpdateResponseDto.fail(e.getMessage());
         }

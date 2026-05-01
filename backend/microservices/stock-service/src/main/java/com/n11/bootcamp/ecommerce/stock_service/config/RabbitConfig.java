@@ -26,11 +26,11 @@ public class RabbitConfig {
     private String reserveRequestedRoutingKey;
 
 
-    @Value("${stock.rabbit.dlx:}")
-    private String dlxName;
-
-    @Value("${stock.rabbit.dlq:}")
-    private String dlqName;
+//    @Value("${stock.rabbit.dlx:}")
+//    private String dlxName;
+//
+//    @Value("${stock.rabbit.dlq:}")
+//    private String dlqName;
 
     @Bean
     public TopicExchange stockExchange() {
@@ -39,12 +39,12 @@ public class RabbitConfig {
 
     @Bean
     public Queue reserveRequestedQueue() {
-        if (dlxName != null && !dlxName.isBlank()) {
-            return QueueBuilder.durable(reserveRequestedQueueName)
-                    .withArgument("x-dead-letter-exchange", dlxName)
-                    .withArgument("x-dead-letter-routing-key", dlqName)
-                    .build();
-        }
+//        if (dlxName != null && !dlxName.isBlank()) {
+//            return QueueBuilder.durable(reserveRequestedQueueName)
+//                    .withArgument("x-dead-letter-exchange", dlxName)
+//                    .withArgument("x-dead-letter-routing-key", dlqName)
+//                    .build();
+//        }
         return QueueBuilder.durable(reserveRequestedQueueName).build();
     }
 
@@ -58,23 +58,23 @@ public class RabbitConfig {
     }
 
 
-    @Bean
-    public TopicExchange stockDlx() {
-        if (dlxName == null || dlxName.isBlank()) return null;
-        return new TopicExchange(dlxName, true, false);
-    }
-
-    @Bean
-    public Queue stockDlq() {
-        if (dlqName == null || dlqName.isBlank()) return null;
-        return QueueBuilder.durable(dlqName).build();
-    }
-
-    @Bean
-    public Binding stockDlqBinding(Queue stockDlq, TopicExchange stockDlx) {
-        if (stockDlq == null || stockDlx == null) return null;
-        return BindingBuilder.bind(stockDlq).to(stockDlx).with(dlqName);
-    }
+//    @Bean
+//    public TopicExchange stockDlx() {
+//        if (dlxName == null || dlxName.isBlank()) return null;
+//        return new TopicExchange(dlxName, true, false);
+//    }
+//
+//    @Bean
+//    public Queue stockDlq() {
+//        if (dlqName == null || dlqName.isBlank()) return null;
+//        return QueueBuilder.durable(dlqName).build();
+//    }
+//
+//    @Bean
+//    public Binding stockDlqBinding(Queue stockDlq, TopicExchange stockDlx) {
+//        if (stockDlq == null || stockDlx == null) return null;
+//        return BindingBuilder.bind(stockDlq).to(stockDlx).with(dlqName);
+//    }
 
 
     @Bean

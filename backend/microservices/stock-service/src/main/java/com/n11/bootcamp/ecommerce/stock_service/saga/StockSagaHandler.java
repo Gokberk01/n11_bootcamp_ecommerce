@@ -19,17 +19,16 @@ import java.util.stream.Collectors;
 public class StockSagaHandler {
 
     private final StockServiceImpl stockServiceImpl;
-
     private final RabbitTemplate rabbitTemplate;
 
 
-    @Value("${stock.rabbit.exchange}")
+    @Value("${stock.rabbit.exchange}") // stock.events.exchange
     private String exchange;
 
-    @Value("${stock.rabbit.reservedRoutingKey}")
+    @Value("${stock.rabbit.reservedRoutingKey}") // order.stock.reserved
     private String reservedRoutingKey;
 
-    @Value("${stock.rabbit.rejectedRoutingKey}")
+    @Value("${stock.rabbit.rejectedRoutingKey}") // order.stock.rejected
     private String rejectedRoutingKey;
 
     public StockSagaHandler(StockServiceImpl stockServiceImpl, RabbitTemplate rabbitTemplate) {
@@ -37,25 +36,26 @@ public class StockSagaHandler {
         this.rabbitTemplate = rabbitTemplate;
     }
 
+
     @Transactional
-    @RabbitListener(queues = "${stock.rabbit.reserveRequestedQueue}")
-    public void handleReserveRequested(StockReserveRequestedEventDto stockReserveRequestedEventDto) {
-        StockUpdateRequestDto stockUpdateRequestDto = new StockUpdateRequestDto(
-                stockReserveRequestedEventDto.getItems().stream()
-                        .map(item -> new StockItemDto(item.getProductId(), item.getQuantity()))
+    @RabbitListener(queues = "${stock.rabbit.reserveRequestedQueue}") // stock.reserve.requested.queue
+    public void handleReserveRequested(StockReserveRequestedEventDto event) {
+        StockUpdateRequestDto req = new StockUpdateRequestDto(
+                event.getItems().stream()
+                        .map(i -> new StockItemDto(i.getProductId(), i.getQuantity()))
                         .collect(Collectors.toList())
         );
 
-        StockUpdateResponseDto stockUpdateResponseDto = stockServiceImpl.decreaseStock(stockUpdateRequestDto);
+        StockUpdateResponseDto resp = stockServiceImpl.reserve(req);
 
-        if (stockUpdateResponseDto.isSuccess()) {
-            StockReservedEventDto stockReservedEventDto =
-                    new StockReservedEventDto(stockReserveRequestedEventDto.getOrderId(), stockReserveRequestedEventDto.getUsername(), "Stock reserved");
-            rabbitTemplate.convertAndSend(exchange, reservedRoutingKey, stockReservedEventDto);
+        if (resp.isSuccess()) {
+            StockReservedEventDto reserved =
+                    new StockReservedEventDto(event.getOrderId(), event.getUsername(), "Stock reserved");
+            rabbitTemplate.convertAndSend(exchange, reservedRoutingKey, reserved);
         } else {
-            StockRejectedEventDto stockRejectedEventDto =
-                    new StockRejectedEventDto(stockReserveRequestedEventDto.getOrderId(), stockReserveRequestedEventDto.getUsername(), stockUpdateResponseDto.getMessage());
-            rabbitTemplate.convertAndSend(exchange, rejectedRoutingKey, stockRejectedEventDto);
+            StockRejectedEventDto rejected =
+                    new StockRejectedEventDto(event.getOrderId(), event.getUsername(), resp.getMessage());
+            rabbitTemplate.convertAndSend(exchange, rejectedRoutingKey, rejected);
         }
     }
 }

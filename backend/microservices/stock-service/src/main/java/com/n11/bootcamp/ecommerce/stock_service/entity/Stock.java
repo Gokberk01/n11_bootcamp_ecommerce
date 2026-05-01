@@ -7,44 +7,100 @@ import jakarta.persistence.*;
 public class Stock {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long productId;
 
     @Column(nullable = false)
     private String productName;
 
     @Column(nullable = false)
-    private int productQuantity;
+    private Integer availableQuantity;
 
-    public Stock(Long id, String productName, int productQuantity) {
-        this.id = id;
-        this.productName = productName;
-        this.productQuantity = productQuantity;
-    }
+    @Column(nullable = false)
+    private Integer reservedQuantity = 0;
 
     public Stock() {}
 
-
-    public void decreaseProductQuantity(int quantity) {
-        if (quantity < 0) throw new IllegalArgumentException("quantity < 0");
-        if (productQuantity < quantity) throw new IllegalStateException("Insufficient stock");
-        productQuantity -= quantity;
-    }
-
-    public void increaseProductQuantity(int quantity) {
-        if (quantity <= 0) throw new IllegalArgumentException("quantity <= 0");
-        productQuantity += quantity;
+    public Stock(Long productId, String productName, Integer availableQuantity) {
+        this.productId = productId;
+        this.productName = productName;
+        this.availableQuantity = availableQuantity;
+        this.reservedQuantity = 0;
     }
 
 
-    public Long getId() {return id;}
-    public void setId(Long id) {this.id = id;}
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public Integer getAvailableQuantity() {
+        return availableQuantity;
+    }
+
+    public void setAvailableQuantity(Integer availableQuantity) {
+        this.availableQuantity = availableQuantity;
+    }
+
+    public Integer getReservedQuantity() {
+        return reservedQuantity;
+    }
+
+    public void setReservedQuantity(Integer reservedQuantity) {
+        this.reservedQuantity = reservedQuantity;
+    }
 
 
-    public String getProductName() {return productName;}
-    public void setProductName(String productName) {this.productName = productName;}
 
 
-    public int getProductQuantity() {return productQuantity;}
-    public void setProductQuantity(int productQuantity) {this.productQuantity = productQuantity;}
+    public void reserve(int q) {
+        validatePositiveOrZero(q);
+
+        if (availableQuantity < q) {
+            throw new IllegalStateException("Insufficient stock");
+        }
+
+        availableQuantity -= q;
+        reservedQuantity += q;
+    }
+
+
+    public void release(int q) {
+        validatePositiveOrZero(q);
+
+        if (reservedQuantity < q) {
+            throw new IllegalStateException("Insufficient reserved stock");
+        }
+
+        reservedQuantity -= q;
+        availableQuantity += q;
+    }
+
+
+    public void commit(int q) {
+        validatePositiveOrZero(q);
+
+        if (reservedQuantity < q) {
+            throw new IllegalStateException("Insufficient reserved stock");
+        }
+
+        reservedQuantity -= q;
+    }
+
+
+    private void validatePositiveOrZero(int q) {
+        if (q < 0) {
+            throw new IllegalArgumentException("q<0");
+        }
+    }
 }
