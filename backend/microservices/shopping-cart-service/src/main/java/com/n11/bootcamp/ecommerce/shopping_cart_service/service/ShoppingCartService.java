@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface ShoppingCartService {
+
     ResponseEntity<ShoppingCart> createShoppingCart(String name);
     ResponseEntity<ShoppingCart> addProductsToShoppingCart(Long shoppingCartId, List<Product> products);
     ResponseEntity<ShoppingCart> removeProductFromShoppingCart(Long shoppingCartId, Long productId);
@@ -16,6 +17,5 @@ public interface ShoppingCartService {
     ResponseEntity<String> deleteShoppingCartById(Long shoppingCartId);
     ResponseEntity<List<ShoppingCart>> getAllShoppingCarts();
     ResponseEntity<String> deleteAllShoppingCarts();
-    public ResponseEntity<ShoppingCart> getShoppingCartById(Long shoppingCartId);
-
+    ResponseEntity<ShoppingCart> getShoppingCartById(Long shoppingCartId);
 }

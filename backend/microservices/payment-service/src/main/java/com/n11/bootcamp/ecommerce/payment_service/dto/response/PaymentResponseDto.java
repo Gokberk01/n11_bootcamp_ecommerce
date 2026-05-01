@@ -6,7 +6,7 @@ public class PaymentResponseDto {
     private String transactionId;
     private String message;
 
-    // Getter / Setter
+
     public boolean isSuccess() { return success; }
     public void setSuccess(boolean success) { this.success = success; }
 

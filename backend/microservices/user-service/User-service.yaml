@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  title: User Service API
+  description: "This API handles user registration, authentication, and profile management.\
+    \ It integrates with an Identity Provider (Keycloak) to provide JWT-based security."
+  version: 1.0.0
+servers:
+- url: http://localhost:8766
+  description: Generated server url
+tags:
+- name: User Management
+  description: User Authentication and Profile Management APIs
+paths:
+  /api/user/update/{userId}:
+    put:
+      tags:
+      - User Management
+      summary: Update user profile
+      description: Updates the profile information of an existing user.
+      operationId: updateUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequestDto"
+        required: true
+      responses:
+        "200":
+          description: User successfully updated
+          content:
+            '*/*':
+              schema:
+                type: object
+        "404":
+          description: User not found
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/user/signup:
+    post:
+      tags:
+      - User Management
+      summary: Register new user
+      description: Creates a new user account in the system.
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpRequestDto"
+        required: true
+      responses:
+        "201":
+          description: User successfully registered
+          content:
+            '*/*':
+              schema:
+                type: object
+        "400":
+          description: User already exists or invalid data
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/user/signin:
+    post:
+      tags:
+      - User Management
+      summary: Login user
+      description: Authenticates a user and returns a token.
+      operationId: authenticateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequestDto"
+        required: true
+      responses:
+        "200":
+          description: Successfully authenticated
+          content:
+            '*/*':
+              schema:
+                type: object
+        "401":
+          description: Invalid credentials
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/user/delete/{userId}:
+    delete:
+      tags:
+      - User Management
+      summary: Delete user
+      description: Removes a user account from the system by ID.
+      operationId: deleteUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: User successfully deleted
+          content:
+            '*/*':
+              schema:
+                type: object
+        "404":
+          description: User not found
+          content:
+            '*/*':
+              schema:
+                type: object
+components:
+  schemas:
+    UpdateUserRequestDto:
+      type: object
+      properties:
+        password:
+          type: string
+          maxLength: 120
+          minLength: 6
+        email:
+          type: string
+          format: email
+          maxLength: 50
+          minLength: 0
+    SignUpRequestDto:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 20
+          minLength: 3
+        email:
+          type: string
+          format: email
+          maxLength: 50
+          minLength: 0
+        role:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
+        password:
+          type: string
+          maxLength: 120
+          minLength: 6
+      required:
+      - email
+      - password
+      - username
+    LoginRequestDto:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+      required:
+      - password
+      - username

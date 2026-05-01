@@ -4,6 +4,7 @@ import com.n11.bootcamp.ecommerce.stock_service.dto.stockupdatedto.StockUpdateRe
 import com.n11.bootcamp.ecommerce.stock_service.dto.stockupdatedto.StockUpdateResponseDto;
 
 public interface StockService {
-    public StockUpdateResponseDto decreaseStock(StockUpdateRequestDto stockUpdateRequestDto);
-    public StockUpdateResponseDto increaseStock(StockUpdateRequestDto stockUpdateRequestDto);
+    StockUpdateResponseDto reserve(StockUpdateRequestDto request);
+    StockUpdateResponseDto release(StockUpdateRequestDto request);
+    StockUpdateResponseDto commit(StockUpdateRequestDto request);
 }

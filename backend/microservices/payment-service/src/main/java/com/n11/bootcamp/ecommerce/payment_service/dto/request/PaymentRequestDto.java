@@ -10,32 +10,26 @@ public class PaymentRequestDto {
     private BigDecimal amount;
     private String paymentMethod;
 
-    // NEW: buyer details
+
     private String firstName;
     private String lastName;
     private String email;
     private String phone;
     private String city;
-    private String streetAddress; // frontend gönderiyor, backend zaten CreateOrderRequest kullanıyor
+    private String streetAddress;
     private String country;
+    private String address;
+    private CardDto card;
+    private List<ItemDto> items;
+
 
     public String getAddress() {
         return address;
     }
-
     public void setAddress(String address) {
         this.address = address;
     }
 
-    private String address;
-
-
-    private CardDto card;
-
-    private List<ItemDto> items; // <-- order'daki ürünler
-
-
-    // getters / setters
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }
 

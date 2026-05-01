@@ -5,6 +5,8 @@ import com.iyzipay.model.*;
 import com.iyzipay.request.CreatePaymentRequest;
 import com.n11.bootcamp.ecommerce.payment_service.dto.request.PaymentRequestDto;
 import com.n11.bootcamp.ecommerce.payment_service.dto.response.PaymentResponseDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -13,6 +15,8 @@ import java.util.List;
 
 @Service
 public class PaymentService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PaymentService.class);
 
     private final Options options;
 
@@ -23,17 +27,20 @@ public class PaymentService {
 
     public PaymentResponseDto processPayment(PaymentRequestDto request) {
 
-        // Iyzico isteği oluştur
-        CreatePaymentRequest iyzicoReq = new CreatePaymentRequest();
+        LOGGER.info("PAYMENT PROCESS START: Starting transaction for Order ID: {} and User: {}",
+                request.getOrderId(), request.getUsername());
 
-        iyzicoReq.setPrice(request.getAmount());
-        iyzicoReq.setPaidPrice(request.getAmount());
-        iyzicoReq.setCurrency(Currency.TRY.name());
-        iyzicoReq.setBasketId(request.getOrderId().toString());
-        iyzicoReq.setPaymentChannel(PaymentChannel.WEB.name());
-        iyzicoReq.setPaymentGroup(PaymentGroup.PRODUCT.name());
 
-        // Kart Bilgileri
+        CreatePaymentRequest iyzicoRequest = new CreatePaymentRequest();
+
+        iyzicoRequest.setPrice(request.getAmount());
+        iyzicoRequest.setPaidPrice(request.getAmount());
+        iyzicoRequest.setCurrency(Currency.TRY.name());
+        iyzicoRequest.setBasketId(request.getOrderId().toString());
+        iyzicoRequest.setPaymentChannel(PaymentChannel.WEB.name());
+        iyzicoRequest.setPaymentGroup(PaymentGroup.PRODUCT.name());
+
+
         PaymentCard paymentCard = new PaymentCard();
         paymentCard.setCardHolderName(request.getCard().getCardHolderName());
         paymentCard.setCardNumber(request.getCard().getCardNumber());
@@ -41,9 +48,9 @@ public class PaymentService {
         paymentCard.setExpireYear(request.getCard().getExpireYear());
         paymentCard.setCvc(request.getCard().getCvc());
         paymentCard.setRegisterCard(0);
-        iyzicoReq.setPaymentCard(paymentCard);
+        iyzicoRequest.setPaymentCard(paymentCard);
 
-        // Müşteri Bilgileri (Buyer)
+
         Buyer buyer = new Buyer();
         buyer.setId(request.getUsername());
         buyer.setName(request.getFirstName());
@@ -54,7 +61,7 @@ public class PaymentService {
         buyer.setRegistrationAddress(request.getAddress() != null ? request.getAddress() : request.getStreetAddress());
         buyer.setCity(request.getCity() != null ? request.getCity() : "Istanbul");
         buyer.setCountry(request.getCountry() != null ? request.getCountry() : "Turkey");
-        iyzicoReq.setBuyer(buyer);
+        iyzicoRequest.setBuyer(buyer);
 
 
         Address billingAddress = new Address();
@@ -62,11 +69,10 @@ public class PaymentService {
         billingAddress.setCity(buyer.getCity());
         billingAddress.setCountry(buyer.getCountry());
         billingAddress.setAddress(buyer.getRegistrationAddress());
-        iyzicoReq.setBillingAddress(billingAddress);
-        iyzicoReq.setShippingAddress(billingAddress);
+        iyzicoRequest.setBillingAddress(billingAddress);
+        iyzicoRequest.setShippingAddress(billingAddress);
 
 
-        // Sepet İçeriği (Basket Items)
         List<BasketItem> basketItems = new ArrayList<>();
         request.getItems().forEach(item -> {
             BasketItem basketItem = new BasketItem();
@@ -78,19 +84,40 @@ public class PaymentService {
             basketItem.setPrice(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
             basketItems.add(basketItem);
         });
-        iyzicoReq.setBasketItems(basketItems);
-
-        // API Çağrısı
-        Payment payment = Payment.create(iyzicoReq, options);
-
-        PaymentResponseDto returnPaymentResponseDto = new PaymentResponseDto();
-
-        returnPaymentResponseDto.setSuccess("success".equalsIgnoreCase(payment.getStatus()));
-        returnPaymentResponseDto.setMessage(payment.getErrorMessage());
-        returnPaymentResponseDto.setTransactionId(payment.getPaymentId());
+        iyzicoRequest.setBasketItems(basketItems);
 
 
-        return returnPaymentResponseDto;
+        try {
+            LOGGER.debug("API CALL: Sending request to Iyzico for Order ID: {}", request.getOrderId());
+
+            Payment payment = Payment.create(iyzicoRequest, options);
+
+            PaymentResponseDto returnPaymentResponseDto = new PaymentResponseDto();
+            boolean isSuccess = "success".equalsIgnoreCase(payment.getStatus());
+
+            returnPaymentResponseDto.setSuccess("success".equalsIgnoreCase(payment.getStatus()));
+            returnPaymentResponseDto.setMessage(payment.getErrorMessage());
+            returnPaymentResponseDto.setTransactionId(payment.getPaymentId());
+
+            if (isSuccess) {
+                LOGGER.info("PAYMENT SUCCESS: Transaction approved for Order ID: {}. Payment ID: {}",
+                        request.getOrderId(), payment.getPaymentId());
+            } else {
+                LOGGER.warn("PAYMENT REJECTED: Order ID: {} failed. Reason: {}, Error Code: {}",
+                        request.getOrderId(), payment.getErrorMessage(), payment.getErrorCode());
+            }
+
+            return returnPaymentResponseDto;
+
+        } catch (Exception e) {
+            LOGGER.error("PAYMENT SYSTEM ERROR: Fatal error during Iyzico communication for Order ID: {}",
+                    request.getOrderId(), e);
+
+            PaymentResponseDto errorResponse = new PaymentResponseDto();
+            errorResponse.setSuccess(false);
+            errorResponse.setMessage("System error during payment processing: " + e.getMessage());
+            return errorResponse;
+        }
 
     }
 }

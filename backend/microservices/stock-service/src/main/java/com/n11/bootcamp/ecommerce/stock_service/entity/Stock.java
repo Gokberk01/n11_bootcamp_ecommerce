@@ -1,5 +1,7 @@
 package com.n11.bootcamp.ecommerce.stock_service.entity;
 
+import com.n11.bootcamp.ecommerce.stock_service.exception.InsufficientStockException;
+import com.n11.bootcamp.ecommerce.stock_service.exception.NegativeQuantityException;
 import jakarta.persistence.*;
 
 @Entity
@@ -31,7 +33,6 @@ public class Stock {
     public Long getProductId() {
         return productId;
     }
-
     public void setProductId(Long productId) {
         this.productId = productId;
     }
@@ -39,7 +40,6 @@ public class Stock {
     public String getProductName() {
         return productName;
     }
-
     public void setProductName(String productName) {
         this.productName = productName;
     }
@@ -47,7 +47,6 @@ public class Stock {
     public Integer getAvailableQuantity() {
         return availableQuantity;
     }
-
     public void setAvailableQuantity(Integer availableQuantity) {
         this.availableQuantity = availableQuantity;
     }
@@ -55,52 +54,46 @@ public class Stock {
     public Integer getReservedQuantity() {
         return reservedQuantity;
     }
-
     public void setReservedQuantity(Integer reservedQuantity) {
         this.reservedQuantity = reservedQuantity;
     }
 
 
+    public void reserve(int quantity) {
+        validatePositiveOrZero(quantity);
 
-
-    public void reserve(int q) {
-        validatePositiveOrZero(q);
-
-        if (availableQuantity < q) {
-            throw new IllegalStateException("Insufficient stock");
+        if (availableQuantity < quantity) {
+            throw new InsufficientStockException("Insufficient stock");
         }
 
-        availableQuantity -= q;
-        reservedQuantity += q;
+        availableQuantity -= quantity;
+        reservedQuantity += quantity;
     }
 
+    public void release(int quantity) {
+        validatePositiveOrZero(quantity);
 
-    public void release(int q) {
-        validatePositiveOrZero(q);
-
-        if (reservedQuantity < q) {
-            throw new IllegalStateException("Insufficient reserved stock");
+        if (reservedQuantity < quantity) {
+            throw new InsufficientStockException("Insufficient reserved stock");
         }
 
-        reservedQuantity -= q;
-        availableQuantity += q;
+        reservedQuantity -= quantity;
+        availableQuantity += quantity;
     }
 
+    public void commit(int quantity) {
+        validatePositiveOrZero(quantity);
 
-    public void commit(int q) {
-        validatePositiveOrZero(q);
-
-        if (reservedQuantity < q) {
-            throw new IllegalStateException("Insufficient reserved stock");
+        if (reservedQuantity < quantity) {
+            throw new InsufficientStockException("Insufficient reserved stock");
         }
 
-        reservedQuantity -= q;
+        reservedQuantity -= quantity;
     }
 
-
-    private void validatePositiveOrZero(int q) {
-        if (q < 0) {
-            throw new IllegalArgumentException("q<0");
+    private void validatePositiveOrZero(int quantity) {
+        if (quantity < 0) {
+            throw new NegativeQuantityException();
         }
     }
 }

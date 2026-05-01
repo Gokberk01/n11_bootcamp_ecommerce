@@ -1,0 +1,195 @@
+openapi: 3.1.0
+info:
+  title: Product Service API
+  description: "API documentation for the Product Microservice, including operations\
+    \ for product management, listing, and updates."
+  version: 1.0.0
+servers:
+- url: http://localhost:8764
+  description: Generated server url
+tags:
+- name: Product
+  description: Product CRUD and Management APIs
+paths:
+  /api/product/{id}:
+    get:
+      tags:
+      - Product
+      summary: Get product by ID
+      description: Returns a single product object based on its unique ID.
+      operationId: getProductById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Product"
+    put:
+      tags:
+      - Product
+      summary: Update an existing product
+      description: Updates the product details based on the provided ID.
+      operationId: updateProduct
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Product"
+        required: true
+      responses:
+        "200":
+          description: Product successfully updated
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Product"
+    delete:
+      tags:
+      - Product
+      summary: Delete product by ID
+      operationId: deleteById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+  /api/product:
+    get:
+      tags:
+      - Product
+      summary: Get all products
+      description: Retrieves a full list of products without pagination.
+      operationId: getAll
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      tags:
+      - Product
+      summary: Create a new product
+      description: Saves a new product to the database and returns the saved entity.
+      operationId: createProduct
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Product"
+        required: true
+      responses:
+        "200":
+          description: Product successfully created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid input data
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Product"
+  /api/product/paged:
+    get:
+      tags:
+      - Product
+      summary: Get paginated products
+      description: Retrieves products in a paginated format with total count and page
+        info.
+      operationId: getPaged
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 4
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/product/deleteAll:
+    delete:
+      tags:
+      - Product
+      summary: Delete all products
+      description: "Danger: This will remove all products from the database."
+      operationId: deleteAll
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        price:
+          type: integer
+          format: int64
+        img:
+          type: string
+        color:
+          type: string
+        brand:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        title:
+          type: string
+        categoryKey:
+          type: string

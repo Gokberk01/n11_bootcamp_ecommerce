@@ -8,6 +8,8 @@ import com.n11.bootcamp.ecommerce.stock_service.dto.stockupdatedto.StockUpdateRe
 import com.n11.bootcamp.ecommerce.stock_service.dto.stockupdatedto.StockUpdateResponseDto;
 import com.n11.bootcamp.ecommerce.stock_service.service.impl.StockServiceImpl;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +19,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class StockSagaHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StockSagaHandler.class);
 
     private final StockServiceImpl stockServiceImpl;
     private final RabbitTemplate rabbitTemplate;
@@ -40,22 +44,38 @@ public class StockSagaHandler {
     @Transactional
     @RabbitListener(queues = "${stock.rabbit.reserveRequestedQueue}") // stock.reserve.requested.queue
     public void handleReserveRequested(StockReserveRequestedEventDto event) {
-        StockUpdateRequestDto req = new StockUpdateRequestDto(
+        LOGGER.info("SAGA EVENT RECEIVED: Stock reserve request for Order ID: {} by user: {}",
+                event.getOrderId(), event.getUsername());
+
+        StockUpdateRequestDto request = new StockUpdateRequestDto(
                 event.getItems().stream()
                         .map(i -> new StockItemDto(i.getProductId(), i.getQuantity()))
                         .collect(Collectors.toList())
         );
 
-        StockUpdateResponseDto resp = stockServiceImpl.reserve(req);
+        try {
+            StockUpdateResponseDto response = stockServiceImpl.reserve(request);
 
-        if (resp.isSuccess()) {
-            StockReservedEventDto reserved =
-                    new StockReservedEventDto(event.getOrderId(), event.getUsername(), "Stock reserved");
-            rabbitTemplate.convertAndSend(exchange, reservedRoutingKey, reserved);
-        } else {
-            StockRejectedEventDto rejected =
-                    new StockRejectedEventDto(event.getOrderId(), event.getUsername(), resp.getMessage());
-            rabbitTemplate.convertAndSend(exchange, rejectedRoutingKey, rejected);
+            if (response.isSuccess()) {
+                LOGGER.info("SAGA SUCCESS: Stock reserved for Order ID: {}. Sending success event to exchange: {}",
+                        event.getOrderId(), exchange);
+
+                StockReservedEventDto reserved =
+                        new StockReservedEventDto(event.getOrderId(), event.getUsername(), "Stock reserved");
+
+                rabbitTemplate.convertAndSend(exchange, reservedRoutingKey, reserved);
+            } else {
+                LOGGER.warn("SAGA REJECTED: Stock reservation failed for Order ID: {}. Reason: {}",
+                        event.getOrderId(), response.getMessage());
+
+                StockRejectedEventDto rejected =
+                        new StockRejectedEventDto(event.getOrderId(), event.getUsername(), response.getMessage());
+
+                rabbitTemplate.convertAndSend(exchange, rejectedRoutingKey, rejected);
+            }
+        } catch (Exception e) {
+            LOGGER.error("SAGA FATAL ERROR: Unexpected error processing reserve request for Order ID: {}",
+                    event.getOrderId(), e);
         }
     }
 }

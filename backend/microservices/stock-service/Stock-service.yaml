@@ -1,0 +1,123 @@
+openapi: 3.1.0
+info:
+  title: Stock Service API
+  description: "This API manages stock levels, and operations. It ensures real-time\
+    \ stock synchronization across the e-commerce microservices."
+  version: 1.0.0
+servers:
+- url: http://localhost:8767
+  description: Generated server url
+tags:
+- name: Stock Management
+  description: Stock Operations and Saga Pattern Transaction Management APIs
+paths:
+  /api/stocks/reserve:
+    post:
+      tags:
+      - Stock Management
+      summary: Reserve stocks
+      description: Decreases available quantity and increases reserved quantity. Part
+        of the Saga orchestration.
+      operationId: reserve
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockUpdateRequestDto"
+        required: true
+      responses:
+        "200":
+          description: Stock successfully reserved
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StockUpdateResponseDto"
+        "400":
+          description: Insufficient stock level
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StockUpdateResponseDto"
+  /api/stocks/release:
+    post:
+      tags:
+      - Stock Management
+      summary: Release reserved stocks
+      description: Decreases reserved quantity and increases available quantity back.
+        Used during payment failures.
+      operationId: release
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockUpdateRequestDto"
+        required: true
+      responses:
+        "200":
+          description: Stock successfully released
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StockUpdateResponseDto"
+        "404":
+          description: Reservation not found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StockUpdateResponseDto"
+  /api/stocks/commit:
+    post:
+      tags:
+      - Stock Management
+      summary: Commit stock reservation
+      description: Decreases reserved quantity permanently. Used when payment is successful.
+      operationId: commit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockUpdateRequestDto"
+        required: true
+      responses:
+        "200":
+          description: Stock successfully committed
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StockUpdateResponseDto"
+        "404":
+          description: Reservation not found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StockUpdateResponseDto"
+components:
+  schemas:
+    StockItemDto:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+      required:
+      - productId
+    StockUpdateRequestDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockItemDto"
+      required:
+      - items
+    StockUpdateResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string

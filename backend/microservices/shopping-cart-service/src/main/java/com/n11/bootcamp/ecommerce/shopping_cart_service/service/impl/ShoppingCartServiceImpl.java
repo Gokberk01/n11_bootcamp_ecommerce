@@ -2,9 +2,12 @@ package com.n11.bootcamp.ecommerce.shopping_cart_service.service.impl;
 
 import com.n11.bootcamp.ecommerce.shopping_cart_service.entity.Product;
 import com.n11.bootcamp.ecommerce.shopping_cart_service.entity.ShoppingCart;
+import com.n11.bootcamp.ecommerce.shopping_cart_service.exception.ShoppingCartNotFoundException;
 import com.n11.bootcamp.ecommerce.shopping_cart_service.repository.ProductRepository;
 import com.n11.bootcamp.ecommerce.shopping_cart_service.repository.ShoppingCartRepository;
 import com.n11.bootcamp.ecommerce.shopping_cart_service.service.ShoppingCartService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,8 @@ import java.util.*;
 @Service
 @Transactional
 public class ShoppingCartServiceImpl implements ShoppingCartService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShoppingCartServiceImpl.class);
 
     private final ShoppingCartRepository shoppingCartRepository;
     private final ProductRepository productRepository;
@@ -35,17 +40,25 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
 
     @Override
     public ResponseEntity<ShoppingCart> createShoppingCart(String shoppingCartName) {
+        LOGGER.info("SERVICE: Creating shopping cart by name: {}", shoppingCartName);
         ShoppingCart shoppingCart = new ShoppingCart();
         shoppingCart.setShoppingCartName(shoppingCartName);
 
-        return ResponseEntity.ok(shoppingCartRepository.save(shoppingCart));
+        ShoppingCart savedCart = shoppingCartRepository.save(shoppingCart);
+        LOGGER.debug("SERVICE: Shopping cart saved with ID: {}", savedCart.getId());
+
+        return ResponseEntity.ok(savedCart);
     }
 
 
     @Override
     public ResponseEntity<ShoppingCart> addProductsToShoppingCart(Long shoppingCartId, List<Product> products) {
+        LOGGER.info("SERVICE: Adding {} products to shopping cart ID: {}", products.size(), shoppingCartId);
         ShoppingCart shoppingCart = shoppingCartRepository.findById(shoppingCartId)
-                .orElseThrow(() -> new RuntimeException("Cannot get ShoppingCartById. Shopping Cart does not exist in DB"));
+                .orElseThrow(() -> {
+                    LOGGER.error("SERVICE ERROR: Shopping Cart not found by ID: {}", shoppingCartId);
+                    return new ShoppingCartNotFoundException(shoppingCartId);
+                });
 
         List<Product> persistedProducts = new ArrayList<>();
 
@@ -54,10 +67,12 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
 
             Product entity = productRepository.findById(incoming.getId())
                     .orElseGet(() -> {
-                        Product p = new Product();
-                        p.setId(incoming.getId());
-                        return p;
+                        LOGGER.debug("SERVICE: Product ID {} not found in local DB", incoming.getId());
+                        Product product = new Product();
+                        product.setId(incoming.getId());
+                        return product;
                     });
+
 
             if (incoming.getTitle() != null && !incoming.getTitle().isBlank()) {
                 entity.setTitle(incoming.getTitle());
@@ -71,9 +86,6 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
             if (incoming.getPrice() > 0) {
                 entity.setPrice(incoming.getPrice());
             }
-//            if (incoming.getDescription() != null && !incoming.getDescription().isBlank()) {
-//                entity.setDescription(incoming.getDescription());
-//            }
             if (incoming.getCategory() != null && !incoming.getCategory().isBlank()) {
                 entity.setCategory(incoming.getCategory());
             }
@@ -88,13 +100,19 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         existingProducts.addAll(persistedProducts);
 
         shoppingCart.setProducts(existingProducts);
+        LOGGER.info("SERVICE: Successfully updated shopping cart ID: {} with new products", shoppingCartId);
         return ResponseEntity.ok(shoppingCartRepository.save(shoppingCart));
     }
 
     @Override
     public ResponseEntity<ShoppingCart> removeProductFromShoppingCart(Long shoppingCartId, Long productId) {
+        LOGGER.warn("SERVICE: Removing product ID: {} from shopping cart ID: {}", productId, shoppingCartId);
         ShoppingCart shoppingCart = shoppingCartRepository.findById(shoppingCartId)
-                .orElseThrow(() -> new RuntimeException("Cannot get ShoppingCartById for removing Product. Shopping Cart does not exist in DB"));
+                .orElseThrow(() -> {
+                    LOGGER.error("SERVICE ERROR: Shopping Cart ID: {} not found for removal", shoppingCartId);
+                    return new ShoppingCartNotFoundException(shoppingCartId);
+                });
+
 
         Set<Product> existingProducts = shoppingCart.getProducts();
         if (existingProducts == null) return ResponseEntity.ok(shoppingCart);
@@ -102,15 +120,21 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         existingProducts.removeIf(product -> product.getId() == productId);
         shoppingCart.setProducts(existingProducts);
 
+        LOGGER.info("SERVICE: Successfully removed shopping cart ID: {}", shoppingCartId);
         return ResponseEntity.ok(shoppingCartRepository.save(shoppingCart));
     }
 
     @Override
     public ResponseEntity<Map<String, String>> getShoppingCartPrice(Long shoppingCartId) {
+        LOGGER.info("SERVICE: Calculating total price for shopping cart ID: {}", shoppingCartId);
         Map<String, String> response = new HashMap<>();
 
+
         ShoppingCart shoppingCart = shoppingCartRepository.findById(shoppingCartId)
-                .orElseThrow(() -> new RuntimeException("Cannot get ShoppingCartById for getting Shopping Cart Price. Shopping Cart does not exist in DB"));
+                .orElseThrow(() -> {
+                    LOGGER.error("SERVICE ERROR: Shopping cart ID: {} not found for total price calculation", shoppingCartId);
+                    return new ShoppingCartNotFoundException(shoppingCartId);
+                });
 
         int totalPrice = shoppingCart.getProducts()
                 .stream()
@@ -120,43 +144,57 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 .sum();
 
         response.put("total_price", Double.toString(totalPrice));
+        LOGGER.info("SERVICE: Calculated total price: {} for shopping cart ID: {}", totalPrice, shoppingCartId);
         return ResponseEntity.ok(response);
     }
 
     @Override
     public ResponseEntity<ShoppingCart> getShoppingCartById(Long shoppingCartId) {
+        LOGGER.info("SERVICE: Fetching shopping cart by ID: {}", shoppingCartId);
+
         ShoppingCart shoppingCart = shoppingCartRepository.findById(shoppingCartId)
-            .orElseThrow(() -> new RuntimeException("Cannot get ShoppingCartById. Shopping Cart does not exist in DB"));
+                .orElseThrow(() -> {
+                    LOGGER.error("SERVICE ERROR: Shopping cart ID: {} not found", shoppingCartId);
+                    return new ShoppingCartNotFoundException(shoppingCartId);
+                });
 
         return ResponseEntity.ok(shoppingCart);
     }
 
     @Override
     public ResponseEntity<ShoppingCart> getShoppingCartByShoppingCartName(String shoppingCartName) {
-        Optional<ShoppingCart> opt = shoppingCartRepository.findByShoppingCartName(shoppingCartName);
+        LOGGER.info("SERVICE: Fetching shopping cart by name: {}", shoppingCartName);
+        Optional<ShoppingCart> shoppingCartOptional = shoppingCartRepository.findByShoppingCartName(shoppingCartName);
 
-        if (opt.isPresent()) {
-            ShoppingCart cart = opt.get();
+        if (shoppingCartOptional.isPresent()) {
+            ShoppingCart cart = shoppingCartOptional.get();
+            LOGGER.info("SERVICE: Fetching shopping cart is present by name: {}", shoppingCartName);
             return ResponseEntity.ok(cart);
         } else {
+            LOGGER.error("SERVICE ERROR: HttpStatus.NOT_FOUND");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
     @Override
     public ResponseEntity<String> deleteShoppingCartById(Long shoppingCartId) {
+        LOGGER.warn("SERVICE: Deleting cart ID: {}", shoppingCartId);
 
         if (shoppingCartRepository.existsById(shoppingCartId)) {
             shoppingCartRepository.deleteById(shoppingCartId);
-            return ResponseEntity.ok("Deleted Shopping Cart by Id successfully");
+
+            LOGGER.info("Deleted Shopping cart by Id successfully");
+            return ResponseEntity.ok("Deleted Shopping cart by Id successfully");
         }
         else {
-            throw new RuntimeException("Cannot get ShoppingCartById for deleting Shopping Cart. Shopping Cart does not exist in DB");
+            LOGGER.error("SERVICE ERROR: Delete failed, shopping cart ID: {} not found", shoppingCartId);
+            throw new ShoppingCartNotFoundException(shoppingCartId);
         }
     }
 
     @Override
     public ResponseEntity<List<ShoppingCart>> getAllShoppingCarts() {
+        LOGGER.info("SERVICE: Fetching all shopping carts");
         List<ShoppingCart> shoppingCarts = shoppingCartRepository.findAll();
 
         return ResponseEntity.ok(shoppingCarts);
@@ -164,6 +202,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
 
     @Override
     public ResponseEntity<String> deleteAllShoppingCarts() {
+        LOGGER.warn("SERVICE: Deleting ALL shopping carts");
         shoppingCartRepository.deleteAll();
         return ResponseEntity.ok("All Shopping Carts deleted successfully");
     }

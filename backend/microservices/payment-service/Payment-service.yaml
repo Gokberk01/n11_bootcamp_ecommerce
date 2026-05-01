@@ -1,0 +1,119 @@
+openapi: 3.1.0
+info:
+  title: Payment Service API
+  description: "This API manages payment transactions, and credit card validation."
+  version: 1.0.0
+servers:
+- url: http://localhost:8769
+  description: Generated server url
+tags:
+- name: Payment Management
+  description: APIs for processing financial transactions and payment validation
+paths:
+  /api/payment/pay:
+    post:
+      tags:
+      - Payment Management
+      summary: Process payment
+      description: Validates credit card information to process the order payment.
+      operationId: makePayment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequestDto"
+        required: true
+      responses:
+        "200":
+          description: Payment successfully processed
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaymentResponseDto"
+        "402":
+          description: Payment required - Insufficient funds or invalid card
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaymentResponseDto"
+        "500":
+          description: Internal server error during payment gateway communication
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaymentResponseDto"
+components:
+  schemas:
+    CardDto:
+      type: object
+      properties:
+        cardHolderName:
+          type: string
+        cardNumber:
+          type: string
+        expireMonth:
+          type: string
+        expireYear:
+          type: string
+        cvc:
+          type: string
+    ItemDto:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+          format: int32
+        category1:
+          type: string
+        category2:
+          type: string
+    PaymentRequestDto:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        city:
+          type: string
+        streetAddress:
+          type: string
+        country:
+          type: string
+        address:
+          type: string
+        card:
+          $ref: "#/components/schemas/CardDto"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemDto"
+    PaymentResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        transactionId:
+          type: string
+        message:
+          type: string

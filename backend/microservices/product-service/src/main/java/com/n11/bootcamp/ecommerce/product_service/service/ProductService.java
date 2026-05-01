@@ -25,6 +25,5 @@ public interface ProductService {
 
     Page<Product> getPaged(int page, int size);
 
-    //void handleCategoryKeyChange(String oldKey, String newKey);
     ResponseEntity<String> handleCategoryKeyChange(String oldKey, String newKey);
 }
