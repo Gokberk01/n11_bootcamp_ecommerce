@@ -1,4 +1,4 @@
-package com.n11.bootcamp.ecommerce.order_service.dto.payment;
+package com.n11.bootcamp.ecommerce.order_service.dto.payment.response;
 
 public class PaymentResponse {
 
@@ -6,7 +6,8 @@ public class PaymentResponse {
     private String transactionId;
     private String message;
 
-    // Getter / Setter
+
+
     public boolean isSuccess() { return success; }
     public void setSuccess(boolean success) { this.success = success; }
 

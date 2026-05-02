@@ -13,12 +13,12 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String username; // userId veya username
+    private String username;
 
     private Double totalPrice;
 
     @Enumerated(EnumType.STRING)
-    private OrderStatus status; // CREATED, PAID, STOCK_DEDUCTED, COMPLETED, CANCELLED
+    private OrderStatus status;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items;
@@ -26,7 +26,8 @@ public class Order {
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private OrderDetails orderDetails;
 
-    // Getter / Setter
+
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -38,6 +39,7 @@ public class Order {
 
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }
+
 
     public List<OrderItem> getItems() { return items; }
     public void setItems(List<OrderItem> items) {

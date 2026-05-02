@@ -1,20 +1,15 @@
 package com.n11.bootcamp.ecommerce.order_service.service;
 
-import com.n11.bootcamp.ecommerce.order_service.dto.CreateOrderRequest;
-import com.n11.bootcamp.ecommerce.order_service.dto.OrderResponse;
+import com.n11.bootcamp.ecommerce.order_service.dto.order.request.OrderRequest;
+import com.n11.bootcamp.ecommerce.order_service.dto.order.response.OrderResponse;
 
 import java.util.List;
 
 public interface OrderService {
-    OrderResponse createOrder(CreateOrderRequest request);
 
-    // Yeni: vendor'a ait siparişleri page'li döner
-    // Admin için tüm siparişleri listele
+    OrderResponse createOrder(OrderRequest request);
     List<OrderResponse> findAllOrders();
-
-    // Belirli siparişi getir
     OrderResponse getOrderById(Long orderId);
-
-    // --- Yeni: kullanıcının siparişlerini getir ---
     List<OrderResponse> findOrdersByUsername(String username);
+
 }

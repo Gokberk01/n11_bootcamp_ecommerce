@@ -19,10 +19,10 @@ public class OrderItem {
     @JoinColumn(name = "order_id")
     private Order order;
 
-    // JPA için no-args constructor
+
     public OrderItem() {}
 
-    // Parametreli constructor
+
     public OrderItem(Order order, Long productId, String productName, Integer quantity, Double price) {
         this.order = order;
         this.productId = productId;
@@ -31,7 +31,8 @@ public class OrderItem {
         this.price = price;
     }
 
-    // Getter / Setter
+
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

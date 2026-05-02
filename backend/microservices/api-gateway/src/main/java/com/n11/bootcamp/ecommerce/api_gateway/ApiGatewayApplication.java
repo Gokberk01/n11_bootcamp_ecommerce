@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:5173")
 public class ApiGatewayApplication {
 
 	public static void main(String[] args) {

@@ -1,0 +1,191 @@
+openapi: 3.1.0
+info:
+  title: Order Service API
+  description: "This API manages the lifecycle of orders, including creation, status\
+    \ tracking, and communicate Stock Service via Saga orchestration pattern."
+  version: 1.0.0
+servers:
+- url: http://localhost:8768
+  description: Generated server url
+tags:
+- name: Order Management
+  description: "APIs for creating, tracking, and managing customer orders"
+paths:
+  /api/orders:
+    post:
+      tags:
+      - Order Management
+      summary: Create a new order
+      description: Initiates a new order and triggers the Saga orchestration.
+      operationId: createOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderRequest"
+        required: true
+      responses:
+        "200":
+          description: Order successfully created and processing started
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          description: Invalid order request data
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+  /api/orders/{id}:
+    get:
+      tags:
+      - Order Management
+      summary: Get order by ID
+      description: Retrieves detailed information about a specific order.
+      operationId: getOrderById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Order found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "404":
+          description: Order not found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+  /api/orders/user/{username}:
+    get:
+      tags:
+      - Order Management
+      summary: Get orders by username
+      description: Retrieves the order history for a specific customer.
+      operationId: getOrdersByUser
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrderResponse"
+  /api/orders/all:
+    get:
+      tags:
+      - Order Management
+      summary: Get all orders
+      description: Retrieves a list of all orders in the system.
+      operationId: getAllOrders
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrderResponse"
+components:
+  schemas:
+    OrderRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderRequestItem"
+        firstName:
+          type: string
+        lastName:
+          type: string
+        streetAddress:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        paymentMethod:
+          type: string
+        card:
+          $ref: "#/components/schemas/OrderRequestCard"
+    OrderRequestCard:
+      type: object
+      properties:
+        cardHolderName:
+          type: string
+        cardNumber:
+          type: string
+        expireMonth:
+          type: string
+        expireYear:
+          type: string
+        cvc:
+          type: string
+    OrderRequestItem:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        price:
+          type: number
+          format: double
+        quantity:
+          type: integer
+          format: int32
+    OrderResponse:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        totalPrice:
+          type: number
+          format: double
+        status:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderResponseItem"
+    OrderResponseItem:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        price:
+          type: number
+          format: double
+        quantity:
+          type: integer
+          format: int32
