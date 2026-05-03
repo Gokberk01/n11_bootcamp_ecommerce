@@ -1,0 +1,151 @@
+version: '3.8'
+
+services:
+  # === ALTYAPI SERVİSLERİ ===
+  postgres-db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: n11bootcampecommerce
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    environment:
+      # Guest/Guest yapısını burada garantiye alıyoruz
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672"   # RabbitMQ iletişim portu
+      - "15672:15672" # RabbitMQ Yönetim Arayüzü portu
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+
+  # === SPRING CLOUD & GATEWAY ===
+  discovery-server:
+    build: ./backend/microservices/discovery-server
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+
+  config-server:
+    build: ./backend/microservices/config-server
+    container_name: config-server
+    ports:
+      - "8762:8762"
+    depends_on:
+      - discovery-server
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
+
+  api-gateway:
+    build: ./backend/microservices/api-gateway
+    container_name: api-gateway
+    ports:
+      - "8763:8763"
+    depends_on:
+      - config-server
+    environment:
+      - CONFIG_URI=http://config-server:8762
+      - EUREKA_URI=http://discovery-server:8761/eureka
+
+  # === MİKROSERVİSLER ===
+
+  product-service:
+    build: ./backend/microservices/product-service
+    container_name: product-service
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      config-server:
+        condition: service_started
+    environment:
+      - CONFIG_URI=http://config-server:8762
+      - EUREKA_URI=http://discovery-server:8761/eureka
+
+  shopping-cart-service:
+    build: ./backend/microservices/shopping-cart-service
+    container_name: shopping-cart-service
+    depends_on:
+      - postgres-db
+      - config-server
+    environment:
+      - CONFIG_URI=http://config-server:8762
+      - EUREKA_URI=http://discovery-server:8761/eureka
+
+  user-service:
+    build: ./backend/microservices/user-service
+    container_name: user-service
+    depends_on:
+      - postgres-db
+      - config-server
+    environment:
+      - CONFIG_URI=http://config-server:8762
+      - EUREKA_URI=http://discovery-server:8761/eureka
+
+  stock-service:
+    build: ./backend/microservices/stock-service
+    container_name: stock-service
+    depends_on:
+      - postgres-db
+      - rabbitmq
+      - config-server
+    environment:
+      - CONFIG_URI=http://config-server:8762
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+
+  order-service:
+    build: ./backend/microservices/order-service
+    container_name: order-service
+    depends_on:
+      - postgres-db
+      - rabbitmq
+      - config-server
+    environment:
+      - CONFIG_URI=http://config-server:8762
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+
+  payment-service:
+    build: ./backend/microservices/payment-service
+    container_name: payment-service
+    depends_on:
+      - config-server
+    environment:
+      - CONFIG_URI=http://config-server:8762
+      - EUREKA_URI=http://discovery-server:8761/eureka
+
+  # === FRONTEND (Dizin yapına göre güncellendi) ===
+  frontend:
+    build:
+      # Burada dizini senin belirttiğin ecommerce klasörüne yönlendirdik
+      context: ./frontend/ecommerce
+      args:
+        - VITE_API_BASE_URL=http://localhost:8763/api
+    container_name: react-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api-gateway
