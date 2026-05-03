@@ -143,25 +143,6 @@ public class OrderServiceImpl implements OrderService {
                 eventPayload
         );
 
-
-//        OrderResponse response = new OrderResponse();
-//        response.setOrderId(savedOrder.getId());
-//        response.setUsername(savedOrder.getUsername());
-//        response.setStatus(savedOrder.getStatus().name());
-//        response.setTotalPrice(savedOrder.getTotalPrice());
-//        response.setItems(
-//                savedOrder.getItems().stream().map(item -> {
-//                    OrderResponseItem i = new OrderResponseItem();
-//                    i.setProductId(item.getProductId());
-//                    i.setProductName(item.getProductName());
-//                    i.setPrice(item.getPrice());
-//                    i.setQuantity(item.getQuantity());
-//                    return i;
-//                }).collect(Collectors.toList())
-//        );
-//
-//        return response;
-
         return mapToOrderResponse(savedOrder);
     }
 
@@ -169,24 +150,6 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public List<OrderResponse> findAllOrders() {
         LOGGER.info("SERVICE CALL: Fetching all orders from repository");
-//        return orderRepository.findAll().stream().map(order -> {
-//            OrderResponse response = new OrderResponse();
-//            response.setOrderId(order.getId());
-//            response.setUsername(order.getUsername());
-//            response.setStatus(order.getStatus().name());
-//            response.setTotalPrice(order.getTotalPrice());
-//            response.setItems(
-//                    order.getItems().stream().map(item -> {
-//                        OrderResponseItem i = new OrderResponseItem();
-//                        i.setProductId(item.getProductId());
-//                        i.setProductName(item.getProductName());
-//                        i.setPrice(item.getPrice());
-//                        i.setQuantity(item.getQuantity());
-//                        return i;
-//                    }).collect(Collectors.toList())
-//            );
-//            return response;
-//        }).collect(Collectors.toList());
 
         return orderRepository.findAll().stream()
                 .map(this::mapToOrderResponse)
@@ -197,26 +160,6 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponse getOrderById(Long orderId) {
         LOGGER.info("SERVICE CALL: Fetching order details for ID: {}", orderId);
-
-//        Order order = orderRepository.findById(orderId)
-//                .orElseThrow(() -> new OrderNotFoundException(orderId));
-//
-//        OrderResponse response = new OrderResponse();
-//        response.setOrderId(order.getId());
-//        response.setUsername(order.getUsername());
-//        response.setStatus(order.getStatus().name());
-//        response.setTotalPrice(order.getTotalPrice());
-//        response.setItems(
-//                order.getItems().stream().map(item -> {
-//                    OrderResponseItem i = new OrderResponseItem();
-//                    i.setProductId(item.getProductId());
-//                    i.setProductName(item.getProductName());
-//                    i.setPrice(item.getPrice());
-//                    i.setQuantity(item.getQuantity());
-//                    return i;
-//                }).collect(Collectors.toList())
-//        );
-//        return response;
 
         return orderRepository.findById(orderId)
                 .map(this::mapToOrderResponse)
@@ -230,34 +173,6 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public List<OrderResponse> findOrdersByUsername(String username) {
         LOGGER.info("SERVICE CALL: Fetching orders for user: {}", username);
-
-//        List<Order> orders;
-//        try {
-//            orders = orderRepository.findByUsername(username);
-//        } catch (Throwable t) {
-//            orders = orderRepository.findAll().stream()
-//                    .filter(o -> username != null && username.equals(o.getUsername()))
-//                    .collect(Collectors.toList());
-//        }
-//
-//        return orders.stream().map(order -> {
-//            OrderResponse response = new OrderResponse();
-//            response.setOrderId(order.getId());
-//            response.setUsername(order.getUsername());
-//            response.setStatus(order.getStatus().name());
-//            response.setTotalPrice(order.getTotalPrice());
-//            response.setItems(
-//                    order.getItems().stream().map(item -> {
-//                        OrderResponseItem i = new OrderResponseItem();
-//                        i.setProductId(item.getProductId());
-//                        i.setProductName(item.getProductName());
-//                        i.setPrice(item.getPrice());
-//                        i.setQuantity(item.getQuantity());
-//                        return i;
-//                    }).collect(Collectors.toList())
-//            );
-//            return response;
-//        }).collect(Collectors.toList());
 
         return orderRepository.findByUsername(username).stream()
                 .map(this::mapToOrderResponse)

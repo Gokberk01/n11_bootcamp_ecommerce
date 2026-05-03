@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin
 @RequestMapping("api/product")
 @Tag(name = "Product", description = "Product CRUD and Management APIs")
 public class ProductController  {

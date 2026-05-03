@@ -41,6 +41,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     @Override
     public ResponseEntity<ShoppingCart> createShoppingCart(String shoppingCartName) {
         LOGGER.info("SERVICE: Creating shopping cart by name: {}", shoppingCartName);
+
         ShoppingCart shoppingCart = new ShoppingCart();
         shoppingCart.setShoppingCartName(shoppingCartName);
 

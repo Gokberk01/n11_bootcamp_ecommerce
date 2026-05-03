@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/user")
 @Tag(name = "User Management", description = "User Authentication and Profile Management APIs")
 public class UserController {

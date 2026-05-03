@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin
 @RequestMapping("api/shopping-cart")
 @Tag(name = "Shopping Cart", description = "Shopping Cart Management APIs")
 public class ShoppingCartController {

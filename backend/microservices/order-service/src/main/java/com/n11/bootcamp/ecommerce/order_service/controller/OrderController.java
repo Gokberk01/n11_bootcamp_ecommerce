@@ -15,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin
 @Tag(name = "Order Management", description = "APIs for creating, tracking, and managing customer orders")
 public class OrderController {
 
